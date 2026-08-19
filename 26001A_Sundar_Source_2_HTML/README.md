@@ -51,4 +51,4 @@ This generates `<source_file.c>.html` in the same directory. Open it in any brow
 ./a.out test.c
 ```
 
-This produces `test.c.html`. Make sure `styles.css` is in the same folder — the generated HTML links to it for the colors.
+This produces `test.c.html`.
