@@ -128,6 +128,11 @@ Status Decoder :: decode_secret_file_extn_size()
 
         ptr[i] = ch;
     }
+
+    if(size_extn_file_decode > 16)      // no real extension is this long
+    {
+        return e_failure;
+    }
     return e_success;
 }
 
@@ -193,110 +198,118 @@ Status Decoder :: decode_secret_file_data()
     return e_success;
 }
 
+void Decoder :: close_files()
+{
+    fptr_encoded_output_image.close();
+    fptr_secret_decode.close();
+}
+
 Status Decoder :: do_decoding()
 {
     //Open encoded .bmp file in read mode
     if(open_files_decode() == e_failure)
     {
         //Failure
-        printf("Encoded file not opened failed\n");
+        cout << "Encoded file not opened failed\n";
         return e_failure;
     }
     else
     {
         //Success
-        printf("Encoded file opened successfully\n");
+        cout << "Encoded file opened successfully\n";
     }
 
     //Skip 54 bytes of bmp header
     if(skip_bmp_header() == e_failure)
     {
         //Failure
-        printf("Skipped bmp header failed\n");
+        cout << "Skipped bmp header failed\n";
         return e_failure;
     }
     else
     {
         //Success
-        printf("Skipped bmp header successfully\n");
+        cout << "Skipped bmp header successfully\n";
     }
 
     //Decode the magic string from the encoded file 
     if(decode_magic_string(MAGIC_STRING) == e_failure)
     {
         //Failure
-        printf("Magic string decode failed\n");
+        cout << "Magic string decode failed\n";
         return e_failure;
     }
     else
     {
         //Success
-        printf("Magic string decoded successfully\n");
+        cout << "Magic string decoded successfully\n";
     }
 
     //Decode secret file extension size from the encoded file
     if(decode_secret_file_extn_size() == e_failure)
     {
         //Failure
-        printf("Secret file extension size decode failed\n");
+        cout << "Secret file extension size decode failed\n";
         return e_failure;
     }
     else
     {
         //Success
-        printf("Secret file extension size decoded successfully\n");
+        cout << "Secret file extension size decoded successfully\n";
     }
 
     //Decode secret file extension from the encoded file
     if(decode_secret_file_extn() == e_failure)
     {
         //Failure
-        printf("Secret file extension failed\n");
+        cout << "Secret file extension failed\n";
         return e_failure;
     }
     else
     {
         //Success
-        printf("Secret file extension decoded successfully\n");
+        cout << "Secret file extension decoded successfully\n";
     }
 
     //Open the output file
     if(open_files_decode_file() == e_failure)
     {
         //Failure
-        printf("Output file not opened failed\n");
+        cout << "Output file not opened failed\n";
         return e_failure;
     }
     else
     {
         //Success
-        printf("Output file opened successfully\n");
+        cout << "Output file opened successfully\n";
     }
 
     //Decode secret file size from the encoded file
     if(decode_secret_file_size() == e_failure)
     {
         //Failure
-        printf("Secret file size failed\n");
+        cout << "Secret file size failed\n";
         return e_failure;
     }
     else
     {
         //Success
-        printf("Secret file size decoded successfully\n");
+        cout << "Secret file size decoded successfully\n";
     }
 
     //Decode the actual secret data from the encoded file and store it in output file
     if(decode_secret_file_data() == e_failure)
     {
         //Failure
-        printf("Secret file data failed\n");
+        cout << "Secret file data failed\n";
+        close_files();
         return e_failure;
     }
     else
     {
         //Success
-        printf("Secret file data decoded successfully\n");
+        cout << "Secret file data decoded successfully\n";
+        close_files();
         return e_success;
     }
 }
