@@ -184,10 +184,10 @@ Status Encoder :: check_capacity()
     //2.Size of data to be encoded
     //total = magic string + extension size + extension + file size + data
     size_secret_file = get_file_size();
-    int total = (string(MAGIC_STRING).size()*8) + 32 + (extn_secret_file.size()*8) + 32 + (size_secret_file*8);
+    uint total = (string(MAGIC_STRING).size()*8) + 32 + (extn_secret_file.size()*8) + 32 + (size_secret_file*8);
     image_capacity = get_image_size_for_bmp();
 
-    if(total < image_capacity)
+    if(total <= image_capacity)
     {
         //Proceed
         return e_success;
@@ -218,7 +218,7 @@ Status Encoder :: encode_byte_to_lsb(char data,char* image_buffer)
     //1.Take each bit from data and store into image_buffer's each byte's lsb
     for(int i=0;i<8;i++)
     {
-        image_buffer[i] = image_buffer[i] & ~(1) | ((data & (1<<i)) >> i);
+        image_buffer[i] = image_buffer[i] & ~(1) | ((data >> i) & 1);
         //Repeat for 8 times
     }
     return e_success;
@@ -240,7 +240,7 @@ Status Encoder :: encode_magic_string(const string &magic_string)
 
 Status Encoder :: encode_secret_file_extn_size()
 {
-    long extn_size = extn_secret_file.size();
+    uint extn_size = extn_secret_file.size();
     char* ptr = (char*)&extn_size;
 
     for(int i=0;i<4;i++)
@@ -303,15 +303,20 @@ Status Encoder :: encode_secret_file_data()
 
 Status Encoder :: copy_remaining_img_data()
 {
-    char ch;
-
     // Copy remaining bytes till EOF
-    while(fptr_src_image.read(&ch,1))
+    if(fptr_src_image.peek() != EOF)
     {
-        fptr_stego_image.write(&ch,1);
+        fptr_stego_image << fptr_src_image.rdbuf();
     }
-    return e_success;
+    return fptr_stego_image ? e_success : e_failure;
 }
+
+void Encoder :: close_files()
+{
+    fptr_src_image.close();
+    fptr_secret.close();
+    fptr_stego_image.close();
+} 
 
 Status Encoder :: do_encoding()
 {
@@ -319,117 +324,120 @@ Status Encoder :: do_encoding()
     if(open_files() == e_failure)
     {
         //File not found
-        printf("Files not opened correctly\n");
+        cout << "Files not opened correctly\n";
         return e_failure;
     }
     else
     {
         //Print Success
-        printf("Open files function successful\n");
+        cout << "Open files function successful\n";
     }
 
     //Check total capacity of secret file and RGB data
     if(check_capacity() == e_failure)
     {
         //Total > RGB
-        printf("Total capacity is greater than RGB data\n");
+        cout << "Total capacity is greater than RGB data\n";
+        close_files();
         return e_failure;
     }
     else
     {
         //Print Success
-        printf("Check capacity is successful\n");
+        cout << "Check capacity is successful\n";
     }
 
     //Copy bmp header from source to destination
     if(copy_bmp_header() == e_failure)
     {
         //Failure
-        printf("Copy bmp header function failed\n");
+        cout << "Copy bmp header function failed\n";
         return e_failure;
     }
     else
     {
         //Print success
-        printf("Copy bmp header function is successful\n");
+        cout << "Copy bmp header function is successful\n";
     }
 
     //Encode the magic string to the file
     if(encode_magic_string(MAGIC_STRING) == e_failure)
     {
         //Failure
-        printf("Encode magic string function failed\n");
+        cout << "Encode magic string function failed\n";
         return e_failure;
     }
     else
     {
         //Print success
-        printf("Encode magic string function is successful\n");
+        cout << "Encode magic string function is successful\n";
     }
 
     //Encode secret file extension file size to the file
     if(encode_secret_file_extn_size() == e_failure)
     {
         //Failure
-        printf("Encode secret file extn size function failed\n");
+        cout << "Encode secret file extn size function failed\n";
         return e_failure;
     }
     else
     {
         //Print success
-        printf("Encode secret file extn size function is successful\n");
+        cout << "Encode secret file extn size function is successful\n";
     }
 
     //Encode secret file extension to the file
     if(encode_secret_file_extn() == e_failure)
     {
         //Failure
-        printf("Encode secret file extn function failed\n");
+        cout << "Encode secret file extn function failed\n";
         return e_failure;
     }
     else
     {
         //Print success
-        printf("Encode secret file extn function is successful\n");
+        cout << "Encode secret file extn function is successful\n";
     }
 
     //Encode the secret file size to the file
     if(encode_secret_file_size() == e_failure)
     {
         //Failure
-        printf("Encode secret file size function failed\n");
+        cout << "Encode secret file size function failed\n";
         return e_failure;
     }
     else
     {
         //Print success
-        printf("Encode secret file size function is successful\n");
+        cout << "Encode secret file size function is successful\n";
     }
 
     //Encode the actual secret file data to the file
     if(encode_secret_file_data() == e_failure)
     {
         //Failure
-        printf("Encode secret file data function failed\n");
+        cout << "Encode secret file data function failed\n";
         return e_failure;
     }
     else
     {
         //Print success
-        printf("Encode secret file data function is successful\n");
+        cout << "Encode secret file data function is successful\n";
     }
 
     //Copy the rest of the bytes of the image file to the encoded file
     if(copy_remaining_img_data() == e_failure)
     {
         //Failure
-        printf("Copy remaining img data function failed\n");
+        cout << "Copy remaining img data function failed\n";
+        close_files();
         return e_failure;
     }
     else
     {
         //Print success
-        printf("Copy remaining img data function is successful\n");
+        cout << "Copy remaining img data function is successful\n";
+        close_files();
         return e_success;
     }
 }
