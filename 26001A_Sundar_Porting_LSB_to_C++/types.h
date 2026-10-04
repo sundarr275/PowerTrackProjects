@@ -1,6 +1,7 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#include <cstdint>
 /* User defined types */
 using uint = unsigned int;
 
